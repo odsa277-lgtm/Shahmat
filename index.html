@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online shahmat: tasodifiy raqib</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fbfdff;--grid:#d3e3f6;--ink:#1b3a8c;--ink-soft:#4a63a8;--line:#9db6e0;
+    --ok:#17794a;--bad:#b3261e;--light:#eaf1fc;--dark:#8fa9d8;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0}
+  body{
+    font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);background-color:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:24px 24px;min-height:100vh;line-height:1.45;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:16px 12px 40px}
+  h1{font-size:1.3rem;margin:0 0 12px}
+  .sheet{background:var(--paper);border:2px solid var(--ink);border-radius:6px;padding:16px;box-shadow:4px 4px 0 var(--line);position:relative}
+  .screen{display:none}.screen.on{display:block}
+  p{margin:0 0 12px}
+  .soft{color:var(--ink-soft);font-size:.95rem}
+  ul.rules{margin:0 0 16px;padding-left:18px}ul.rules li{margin-bottom:4px}
+  label{display:block;font-size:.9rem;color:var(--ink-soft);margin-bottom:4px}
+  input[type=text]{font:inherit;width:100%;max-width:320px;padding:10px 12px;border:2px solid var(--line);border-radius:6px;color:var(--ink);background:#fff;margin-bottom:16px}
+  input:focus-visible,.btn:focus-visible,.sq:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+  .btn{font:inherit;font-weight:500;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:6px;padding:9px 16px;cursor:pointer}
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn.primary{background:var(--ink);color:#fff}.btn.primary:hover{background:#12296b}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  #err{color:var(--bad);font-weight:500;min-height:1.4em}
+  .strip{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border:2px solid var(--line);border-radius:6px;background:#fff;margin:8px 0}
+  .strip.act{border-color:var(--ink)}
+  .strip .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .strip .clk{font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums}
+  .strip .clk.low{color:var(--bad)}
+  .board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border:2px solid var(--ink);container-type:inline-size;user-select:none}
+  .sq{position:relative;border:0;margin:0;padding:0;display:grid;place-items:center;cursor:pointer;
+    font-family:"Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","DejaVu Sans",serif;
+    font-size:8vw;font-size:9.5cqw;line-height:1;background:var(--light)}
+  .sq.d{background:var(--dark)}
+  .sq.last::before{content:"";position:absolute;inset:0;background:rgba(245,215,110,.55)}
+  .sq.sel::before{content:"";position:absolute;inset:0;background:rgba(245,190,40,.8)}
+  .sq.chk{background:radial-gradient(circle,#ff6b5e 0,#ff6b5e 40%,transparent 75%),var(--light)}
+  .sq.d.chk{background:radial-gradient(circle,#ff6b5e 0,#ff6b5e 40%,transparent 75%),var(--dark)}
+  .sq.mv::after{content:"";position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(27,58,140,.45)}
+  .sq.cap::after{content:"";position:absolute;inset:4%;border-radius:50%;border:4px solid rgba(27,58,140,.5)}
+  .sq .pc{position:relative;z-index:1}
+  .pc.w{color:#fff;text-shadow:1px 0 #1b2a5c,-1px 0 #1b2a5c,0 1px #1b2a5c,0 -1px #1b2a5c,1px 1px #1b2a5c,-1px -1px #1b2a5c,1px -1px #1b2a5c,-1px 1px #1b2a5c}
+  .pc.b{color:#14214a}
+  .co{position:absolute;font:700 .62rem "Golos Text",sans-serif;opacity:.75;z-index:1;pointer-events:none}
+  .co.f{right:3px;bottom:1px}.co.r{left:3px;top:1px}
+  #stat{margin:8px 0 0;font-weight:700}
+  .moves{margin-top:10px;max-height:5.5em;overflow:auto;font-size:.85rem;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:6px}
+  .ov{position:absolute;inset:0;background:rgba(251,253,255,.93);display:grid;place-items:center;text-align:center;padding:20px;z-index:5;border-radius:4px}
+  .ov .in{max-width:340px}
+  .res{font-size:1.5rem;font-weight:700;margin:0 0 10px}
+  .res.win{color:var(--ok)}.res.lose{color:var(--bad)}
+  .pick{display:flex;gap:10px;justify-content:center}
+  .pick .btn{font-size:2.2rem;line-height:1;padding:8px 12px;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols",serif}
+  .offer{border:2px solid var(--ink);border-radius:6px;padding:8px 10px;margin-top:10px;background:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Online shahmat</h1>
+  <main class="sheet">
+
+    <section class="screen on" id="s-home">
+      <ul class="rules">
+        <li>Tasodifiy raqib bilan 1 ga 1 o'ynaysiz, rang tasodifiy beriladi.</li>
+        <li>Har biringizga 10 daqiqa vaqt beriladi.</li>
+        <li>Barcha qoidalar ishlaydi: rokirovka, oldingi o'tish (en passant), piyoda almashishi, shoh, mat va pat.</li>
+        <li>Durang taklif qilish va taslim bo'lish mumkin.</li>
+      </ul>
+      <label for="nick">Ismingiz</label>
+      <input type="text" id="nick" maxlength="16" placeholder="Masalan: Ali" autocomplete="off">
+      <div class="row" style="margin-top:0"><button class="btn primary" id="play">Raqib qidirish</button></div>
+      <p id="err"></p>
+    </section>
+
+    <section class="screen" id="s-wait">
+      <p><b id="waitTxt">Raqib qidirilmoqda...</b></p>
+      <p class="soft">Raqib ham shu sahifani ochib "Raqib qidirish" tugmasini bossa, sizlar avtomatik topishasiz. Sinash uchun sahifani ikkinchi telefon yoki boshqa oynada oching.</p>
+      <div class="row"><button class="btn" id="cancel">Bekor qilish</button></div>
+    </section>
+
+    <section class="screen" id="s-game">
+      <div class="strip" id="topStrip"><span class="nm" id="opN"></span><span class="clk" id="opC">10:00</span></div>
+      <div class="board" id="board" role="grid" aria-label="Shahmat taxtasi"></div>
+      <div class="strip" id="botStrip"><span class="nm" id="myN"></span><span class="clk" id="myC">10:00</span></div>
+      <p id="stat"></p>
+      <div class="row">
+        <button class="btn" id="drawBtn">Durang taklif qilish</button>
+        <button class="btn" id="resignBtn">Taslim bo'lish</button>
+      </div>
+      <div class="offer" id="offer" hidden>
+        <p style="margin-bottom:8px">Raqib durang taklif qilmoqda.</p>
+        <div class="row" style="margin-top:0"><button class="btn primary" id="accept">Qabul qilish</button><button class="btn" id="decline">Rad etish</button></div>
+      </div>
+      <div class="moves" id="mv"></div>
+
+      <div class="ov" id="promo" hidden><div class="in"><p><b>Piyodani almashtiring</b></p><div class="pick" id="pick"></div></div></div>
+      <div class="ov" id="done" hidden><div class="in"><p class="res" id="resTxt"></p><p id="resSub" class="soft"></p><button class="btn primary" id="again">Yangi o'yin</button></div></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var TIME_MS = 10*60*1000, SLOTS = 12, PREFIX = "shahmat-rnd-v1-s";
+  var $ = function(id){ return document.getElementById(id); };
+  function show(id){ var s=document.querySelectorAll(".screen"); for(var i=0;i<s.length;i++) s[i].classList.toggle("on", s[i].id===id); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function safeDestroy(p){ try{ p && p.destroy(); }catch(e){} }
+
+  /* ================= SHAHMAT QOIDALARI ================= */
+  var KN=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+  var KG=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  var DR=[[1,0],[-1,0],[0,1],[0,-1]], DB=[[1,1],[1,-1],[-1,1],[-1,-1]];
+  var GLYPH={K:"\u265A",Q:"\u265B",R:"\u265C",B:"\u265D",N:"\u265E",P:"\u265F"};
+
+  function colorOf(p){ return p ? (p < "a" ? "w" : "b") : null; }
+  function sqName(s){ return "abcdefgh"[s&7] + (8-(s>>3)); }
+  function initState(){
+    var rows="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".split("/"), b=[];
+    rows.forEach(function(row){ for(var i=0;i<row.length;i++){ var ch=row[i]; if(ch>="1"&&ch<="8"){ for(var k=0;k<+ch;k++) b.push(""); } else b.push(ch); } });
+    return {b:b,turn:"w",cas:{K:1,Q:1,k:1,q:1},ep:-1,half:0,full:1};
+  }
+  function inb(r,c){ return r>=0&&r<8&&c>=0&&c<8; }
+
+  function attacked(b, sq, by){
+    var r=sq>>3, c=sq&7, i, d, rr, cc, p;
+    var pr = by==="w" ? r+1 : r-1;
+    if(pr>=0&&pr<8){
+      for(i=-1;i<=1;i+=2){ cc=c+i; if(cc>=0&&cc<8 && b[pr*8+cc]===(by==="w"?"P":"p")) return true; }
+    }
+    for(i=0;i<8;i++){ rr=r+KN[i][0]; cc=c+KN[i][1]; if(inb(rr,cc) && b[rr*8+cc]===(by==="w"?"N":"n")) return true; }
+    for(i=0;i<8;i++){ rr=r+KG[i][0]; cc=c+KG[i][1]; if(inb(rr,cc) && b[rr*8+cc]===(by==="w"?"K":"k")) return true; }
+    var rook=by==="w"?"R":"r", bish=by==="w"?"B":"b", queen=by==="w"?"Q":"q";
+    for(i=0;i<4;i++){
+      d=DR[i]; rr=r+d[0]; cc=c+d[1];
+      while(inb(rr,cc)){ p=b[rr*8+cc]; if(p){ if(p===rook||p===queen) return true; break; } rr+=d[0]; cc+=d[1]; }
+      d=DB[i]; rr=r+d[0]; cc=c+d[1];
+      while(inb(rr,cc)){ p=b[rr*8+cc]; if(p){ if(p===bish||p===queen) return true; break; } rr+=d[0]; cc+=d[1]; }
+    }
+    return false;
+  }
+  function kingSq(b,col){ return b.indexOf(col==="w"?"K":"k"); }
+
+  function pseudo(st){
+    var b=st.b, col=st.turn, opp=col==="w"?"b":"w", out=[], sq, p, t, r, c, i, rr, cc, to, d;
+    function add(f,to,pr,ep,cs){ out.push({f:f,t:to,pr:pr||"",ep:!!ep,cs:cs||""}); }
+    for(sq=0;sq<64;sq++){
+      p=b[sq]; if(!p||colorOf(p)!==col) continue;
+      t=p.toUpperCase(); r=sq>>3; c=sq&7;
+      if(t==="P"){
+        var dir=col==="w"?-1:1, start=col==="w"?6:1, last=col==="w"?0:7;
+        var addP=function(f,to){ if((to>>3)===last){ ["q","r","b","n"].forEach(function(x){ add(f,to,x); }); } else add(f,to); };
+        var one=(r+dir)*8+c;
+        if(!b[one]){ addP(sq,one); if(r===start && !b[one+dir*8]) add(sq,one+dir*8); }
+        for(i=-1;i<=1;i+=2){
+          cc=c+i; if(cc<0||cc>7) continue;
+          to=(r+dir)*8+cc;
+          if(b[to] && colorOf(b[to])===opp) addP(sq,to);
+          else if(to===st.ep) add(sq,to,"",true);
+        }
+      } else if(t==="N" || t==="K"){
+        var offs = t==="N" ? KN : KG;
+        for(i=0;i<8;i++){
+          rr=r+offs[i][0]; cc=c+offs[i][1]; if(!inb(rr,cc)) continue;
+          to=rr*8+cc; if(!b[to] || colorOf(b[to])===opp) add(sq,to);
+        }
+        if(t==="K"){
+          if(col==="w" && sq===60){
+            if(st.cas.K && b[63]==="R" && !b[61] && !b[62] && !attacked(b,60,"b") && !attacked(b,61,"b") && !attacked(b,62,"b")) add(60,62,"",false,"K");
+            if(st.cas.Q && b[56]==="R" && !b[57] && !b[58] && !b[59] && !attacked(b,60,"b") && !attacked(b,59,"b") && !attacked(b,58,"b")) add(60,58,"",false,"Q");
+          }
+          if(col==="b" && sq===4){
+            if(st.cas.k && b[7]==="r" && !b[5] && !b[6] && !attacked(b,4,"w") && !attacked(b,5,"w") && !attacked(b,6,"w")) add(4,6,"",false,"K");
+            if(st.cas.q && b[0]==="r" && !b[1] && !b[2] && !b[3] && !attacked(b,4,"w") && !attacked(b,3,"w") && !attacked(b,2,"w")) add(4,2,"",false,"Q");
+          }
+        }
+      } else {
+        var dirs = t==="R" ? DR : t==="B" ? DB : DR.concat(DB);
+        for(i=0;i<dirs.length;i++){
+          d=dirs[i]; rr=r+d[0]; cc=c+d[1];
+          while(inb(rr,cc)){
+            to=rr*8+cc;
+            if(!b[to]) add(sq,to);
+            else { if(colorOf(b[to])===opp) add(sq,to); break; }
+            rr+=d[0]; cc+=d[1];
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function apply(st,m){
+    var b=st.b.slice(), p=b[m.f], col=colorOf(p), cap=b[m.t];
+    b[m.t]=p; b[m.f]="";
+    if(m.ep) b[m.t + (col==="w"?8:-8)]="";
+    if(m.pr) b[m.t]= col==="w" ? m.pr.toUpperCase() : m.pr;
+    if(m.cs){
+      if(col==="w"){ if(m.cs==="K"){ b[61]=b[63]; b[63]=""; } else { b[59]=b[56]; b[56]=""; } }
+      else { if(m.cs==="K"){ b[5]=b[7]; b[7]=""; } else { b[3]=b[0]; b[0]=""; } }
+    }
+    var cas={K:st.cas.K,Q:st.cas.Q,k:st.cas.k,q:st.cas.q};
+    if(p==="K"){ cas.K=0; cas.Q=0; }
+    if(p==="k"){ cas.k=0; cas.q=0; }
+    if(m.f===63||m.t===63) cas.K=0;
+    if(m.f===56||m.t===56) cas.Q=0;
+    if(m.f===7||m.t===7) cas.k=0;
+    if(m.f===0||m.t===0) cas.q=0;
+    var isP = p==="P"||p==="p";
+    return {
+      b:b, turn: col==="w"?"b":"w", cas:cas,
+      ep: (isP && Math.abs(m.t-m.f)===16) ? (m.f+m.t)/2 : -1,
+      half: (isP||cap||m.ep) ? 0 : st.half+1,
+      full: st.full + (col==="b"?1:0)
+    };
+  }
+  function legal(st){
+    var col=st.turn, opp=col==="w"?"b":"w";
+    return pseudo(st).filter(function(m){ var ns=apply(st,m); return !attacked(ns.b, kingSq(ns.b,col), opp); });
+  }
+  function inCheck(st){ return attacked(st.b, kingSq(st.b,st.turn), st.turn==="w"?"b":"w"); }
+  function posKey(st){ return st.b.map(function(x){return x||"-";}).join("")+st.turn+st.cas.K+st.cas.Q+st.cas.k+st.cas.q+st.ep; }
+  function insufficient(b){
+    var rest=b.filter(function(p){ return p && p.toUpperCase()!=="K"; });
+    return rest.length===0 || (rest.length===1 && /[bn]/i.test(rest[0]));
+  }
+  function moveText(st,m){
+    if(m.cs) return m.cs==="K" ? "O-O" : "O-O-O";
+    var p=st.b[m.f], t=p.toUpperCase(), cap=st.b[m.t]||m.ep;
+    return (t==="P"?"":t) + sqName(m.f) + (cap?"x":"-") + sqName(m.t) + (m.pr?"="+m.pr.toUpperCase():"");
+  }
+
+  /* ================= TARMOQ: tasodifiy raqib topish (PeerJS) ================= */
+  var token=0, peer=null, guestPeer=null, conn=null, role=null, abortWait=null;
+  var myName="", oppName="Raqib", G=null;
+
+  function resetNet(){
+    abortWait && abortWait(); abortWait=null;
+    try{ conn && conn.close(); }catch(e){}
+    safeDestroy(peer); if(guestPeer!==peer) safeDestroy(guestPeer);
+    peer=guestPeer=conn=null; role=null;
+  }
+  function send(m){ try{ conn && conn.open && conn.send(m); }catch(e){} }
+
+  function tryClaim(k){
+    return new Promise(function(res){
+      var p=new Peer(PREFIX+k), done=false;
+      var to=setTimeout(function(){ if(!done){ done=true; safeDestroy(p); res("error"); } },8000);
+      p.on("open",function(){ if(done) return; done=true; clearTimeout(to); res(p); });
+      p.on("error",function(e){ if(done) return; done=true; clearTimeout(to); safeDestroy(p); res(e&&e.type==="unavailable-id"?"taken":"error"); });
+    });
+  }
+  function getGuest(){
+    if(guestPeer && !guestPeer.destroyed && guestPeer.open) return Promise.resolve(guestPeer);
+    safeDestroy(guestPeer);
+    return new Promise(function(res){
+      var p=new Peer(), done=false;
+      var to=setTimeout(function(){ if(!done){ done=true; safeDestroy(p); res(null); } },8000);
+      p.on("open",function(){ if(done) return; done=true; clearTimeout(to); guestPeer=p; res(p); });
+      p.on("error",function(){ if(done) return; done=true; clearTimeout(to); safeDestroy(p); res(null); });
+    });
+  }
+  function tryJoin(k,my){
+    return getGuest().then(function(gp){
+      if(!gp || my!==token) return false;
+      return new Promise(function(res){
+        var c=gp.connect(PREFIX+k,{reliable:true}), done=false, to;
+        function fin(v){ if(done) return; done=true; clearTimeout(to); if(!v){ try{ c.close(); }catch(e){} } res(v); }
+        to=setTimeout(function(){ fin(false); },5000);
+        c.on("data",function(d){
+          if(done||!d) return;
+          if(d.t==="busy") fin(false);
+          else if(d.t==="hello"){
+            conn=c; role="guest"; peer=gp; oppName=d.name||"Raqib";
+            attach(c); c.send({t:"hello",name:myName}); fin(true);
+          }
+        });
+        c.on("error",function(){ fin(false); });
+        c.on("close",function(){ fin(false); });
+      });
+    });
+  }
+  function hostWait(p,my){
+    return new Promise(function(res){
+      var paired=false, finished=false, rehop;
+      function end(v){ if(finished) return; finished=true; clearTimeout(rehop); abortWait=null; res(v); }
+      rehop=setTimeout(function(){ if(!paired){ safeDestroy(p); end(false); } },5000+Math.random()*5000);
+      abortWait=function(){ safeDestroy(p); end(false); };
+      p.on("error",function(){});
+      p.on("disconnected",function(){ try{ p.reconnect(); }catch(e){} });
+      p.on("connection",function(c){
+        c.on("open",function(){
+          if(paired || my!==token){ c.send({t:"busy"}); setTimeout(function(){ try{ c.close(); }catch(e){} },300); return; }
+          paired=true; conn=c; role="host"; peer=p;
+          safeDestroy(guestPeer); guestPeer=null;
+          attach(c); c.send({t:"hello",name:myName}); end(true);
+        });
+      });
+    });
+  }
+  async function search(){
+    var my=++token, fails=0;
+    show("s-wait"); $("waitTxt").textContent="Raqib qidirilmoqda...";
+    while(my===token){
+      for(var k=0;k<SLOTS && my===token;k++){
+        var r=await tryClaim(k);
+        if(my!==token){ if(r && r.destroy) safeDestroy(r); return; }
+        if(r==="error"){ fails++; continue; }
+        if(r==="taken"){ if(await tryJoin(k,my)) return; continue; }
+        fails=0; peer=r;
+        if(await hostWait(r,my)) return;
+        break;
+      }
+      if(fails>=SLOTS){ $("waitTxt").textContent="Server bilan aloqa yo'q. Qayta urinilmoqda..."; fails=0; await sleep(3000); }
+      else { $("waitTxt").textContent="Raqib qidirilmoqda..."; await sleep(300+Math.random()*700); }
+    }
+  }
+
+  function attach(c){
+    c.on("data",onMsg);
+    c.on("close",function(){ if(c===conn) onClose(); });
+    c.on("error",function(){ if(c===conn) onClose(); });
+  }
+  function onClose(){
+    if(!G){ resetNet(); search(); return; }
+    if(!G.over) endGame("Raqib chiqib ketdi","Aloqa uzildi, g'alaba sizga beriladi.","win");
+  }
+  function onMsg(d){
+    if(!d) return;
+    if(d.t==="hello"){
+      oppName=d.name||"Raqib";
+      if(role==="host"){
+        var hostWhite=Math.random()<0.5;
+        send({t:"start",color:hostWhite?"b":"w"});
+        startGame(hostWhite?"w":"b");
+      }
+      return;
+    }
+    if(d.t==="start"){ startGame(d.color); return; }
+    if(!G || G.over) return;
+    if(d.t==="move"){
+      if(G.st.turn===G.my) return;
+      var ms=legal(G.st).filter(function(m){ return m.f===d.f && m.t===d.to && m.pr===(d.pr||""); });
+      if(ms.length) doMove(ms[0],true);
+    } else if(d.t==="resign"){ endGame("Raqib taslim bo'ldi","Siz yutdingiz!","win"); }
+    else if(d.t==="flag"){ endGame("Raqibning vaqti tugadi","Siz yutdingiz!","win"); }
+    else if(d.t==="draw"){ $("offer").hidden=false; }
+    else if(d.t==="drawok"){ if(G.drawSent) endGame("Durang","Raqib durangni qabul qildi.",""); }
+    else if(d.t==="drawno"){ G.drawSent=false; $("drawBtn").disabled=false; $("stat").textContent="Raqib durangni rad etdi."; }
+  }
+
+  /* ================= O'YIN ================= */
+  function startGame(myColor){
+    var st=initState();
+    G={st:st,my:myColor,over:false,sel:-1,targets:[],last:[-1,-1],hist:[],keys:{},
+       clock:{w:TIME_MS,b:TIME_MS},tickAt:Date.now(),flagAt:0,drawSent:false,timer:null,moves:[]};
+    G.keys[posKey(st)]=1;
+    $("myN").textContent=myName+(myColor==="w"?" (oq)":" (qora)");
+    $("opN").textContent=oppName+(myColor==="w"?" (qora)":" (oq)");
+    $("done").hidden=true; $("promo").hidden=true; $("offer").hidden=true;
+    $("drawBtn").disabled=false; $("mv").textContent="";
+    show("s-game");
+    G.timer=setInterval(tick,200);
+    render();
+  }
+
+  function fmtClock(ms){ var s=Math.ceil(ms/1000), m=Math.floor(s/60); s%=60; return m+":"+(s<10?"0":"")+s; }
+  function tick(){
+    if(!G||G.over) return;
+    var now=Date.now(), d=now-G.tickAt; G.tickAt=now;
+    var t=G.st.turn; G.clock[t]=Math.max(0,G.clock[t]-d);
+    renderClocks();
+    if(G.clock[t]<=0){
+      if(t===G.my){ send({t:"flag"}); endGame("Vaqtingiz tugadi","Raqib yutdi.","lose"); }
+      else { if(!G.flagAt) G.flagAt=now; else if(now-G.flagAt>4000) endGame("Raqibning vaqti tugadi","Siz yutdingiz!","win"); }
+    }
+  }
+  function renderClocks(){
+    var opp=G.my==="w"?"b":"w";
+    $("myC").textContent=fmtClock(G.clock[G.my]); $("opC").textContent=fmtClock(G.clock[opp]);
+    $("myC").classList.toggle("low",G.clock[G.my]<30000); $("opC").classList.toggle("low",G.clock[opp]<30000);
+    $("botStrip").classList.toggle("act",G.st.turn===G.my && !G.over);
+    $("topStrip").classList.toggle("act",G.st.turn!==G.my && !G.over);
+  }
+
+  function render(){
+    var bd=$("board"), flip=G.my==="b", html="", i, sq, p, cls, ck=-1;
+    if(inCheck(G.st)) ck=kingSq(G.st.b,G.st.turn);
+    for(i=0;i<64;i++){
+      sq = flip ? 63-i : i;
+      var r=sq>>3, c=sq&7, dr=i>>3, dc=i&7;
+      cls="sq"+(((r+c)%2)?" d":"");
+      if(sq===G.last[0]||sq===G.last[1]) cls+=" last";
+      if(sq===G.sel) cls+=" sel";
+      if(sq===ck) cls+=" chk";
+      if(G.targets.indexOf(sq)>=0) cls+= G.st.b[sq]||(G.st.ep===sq && /p/i.test(G.st.b[G.sel]||"")) ? " cap" : " mv";
+      p=G.st.b[sq];
+      html+='<button class="'+cls+'" data-s="'+sq+'" aria-label="'+sqName(sq)+'">'+
+        (dc===0?'<span class="co r">'+(8-r)+'</span>':'')+
+        (dr===7?'<span class="co f">'+"abcdefgh"[c]+'</span>':'')+
+        (p?'<span class="pc '+colorOf(p)+'">'+GLYPH[p.toUpperCase()]+'\uFE0E</span>':'')+
+        '</button>';
+    }
+    bd.innerHTML=html;
+    renderClocks();
+    var s=$("stat");
+    if(!G.over && s.dataset.keep!=="1"){
+      s.textContent = G.st.turn===G.my ? (inCheck(G.st)?"Shoh! Sizning navbatingiz":"Sizning navbatingiz") : "Raqib o'ylayapti...";
+    }
+  }
+
+  function onSquare(sq){
+    if(!G||G.over||G.st.turn!==G.my||!$("promo").hidden) return;
+    $("stat").dataset.keep="";
+    if(G.sel>=0 && G.targets.indexOf(sq)>=0){
+      var ms=legal(G.st).filter(function(m){ return m.f===G.sel && m.t===sq; });
+      if(ms.length>1){ askPromo(ms); return; }
+      doMove(ms[0],false); return;
+    }
+    var p=G.st.b[sq];
+    if(p && colorOf(p)===G.my){
+      G.sel=sq;
+      G.targets=legal(G.st).filter(function(m){ return m.f===sq; }).map(function(m){ return m.t; });
+    } else { G.sel=-1; G.targets=[]; }
+    render();
+  }
+
+  function askPromo(ms){
+    var pick=$("pick"); pick.innerHTML="";
+    ms.forEach(function(m){
+      var b=document.createElement("button"); b.className="btn"; b.type="button";
+      b.textContent=GLYPH[m.pr.toUpperCase()]+"\uFE0E";
+      b.setAttribute("aria-label",{q:"Farzin",r:"Rux",b:"Fil",n:"Ot"}[m.pr]);
+      b.addEventListener("click",function(){ $("promo").hidden=true; doMove(m,false); });
+      pick.appendChild(b);
+    });
+    $("promo").hidden=false;
+  }
+
+  function doMove(m,fromNet){
+    tick();
+    if(G.over) return;
+    var before=G.st, mover=before.turn, txt=moveText(before,m);
+    G.st=apply(before,m);
+    G.last=[m.f,m.t]; G.sel=-1; G.targets=[]; G.flagAt=0; G.tickAt=Date.now();
+    var k=posKey(G.st); G.keys[k]=(G.keys[k]||0)+1;
+    if(!fromNet) send({t:"move",f:m.f,to:m.t,pr:m.pr});
+
+    var moves=legal(G.st), chk=inCheck(G.st), result=null;
+    if(!moves.length){
+      if(chk){ txt+="#"; result=(mover===G.my) ? ["Shoh va mat!","Siz yutdingiz!","win"] : ["Shoh va mat","Raqib yutdi.","lose"]; }
+      else result=["Pat (durang)","Yurish qilish mumkin emas.",""];
+    } else {
+      if(chk) txt+="+";
+      if(G.st.half>=100) result=["Durang","50 yurish qoidasi.",""];
+      else if(G.keys[k]>=3) result=["Durang","Bir xil holat 3 marta takrorlandi.",""];
+      else if(insufficient(G.st.b)) result=["Durang","Mat qilish uchun donalar yetarli emas.",""];
+    }
+    G.moves.push((mover==="w" ? ((G.st.full)+". ") : "")+txt);
+    $("mv").textContent=G.moves.join("  ");
+    $("mv").scrollTop=$("mv").scrollHeight;
+    $("offer").hidden=true;
+    render();
+    if(result) endGame(result[0],result[1],result[2]);
+  }
+
+  function endGame(title,sub,cls){
+    if(!G||G.over) return;
+    G.over=true; clearInterval(G.timer);
+    $("resTxt").textContent=title; $("resTxt").className="res "+cls;
+    $("resSub").textContent=sub;
+    $("promo").hidden=true; $("done").hidden=false;
+    renderClocks();
+  }
+
+  /* ================= Tugmalar ================= */
+  $("board").addEventListener("click",function(e){
+    var el=e.target.closest(".sq"); if(el) onSquare(+el.dataset.s);
+  });
+  $("play").addEventListener("click",function(){
+    myName=($("nick").value.trim()||"O'yinchi"+Math.floor(Math.random()*900+100)).slice(0,16);
+    try{ localStorage.setItem("shahmatNick",$("nick").value.trim()); }catch(e){}
+    if(typeof Peer==="undefined"){ $("err").textContent="PeerJS yuklanmadi. Internetni tekshiring va sahifani yangilang."; return; }
+    $("err").textContent=""; search();
+  });
+  $("cancel").addEventListener("click",function(){ token++; resetNet(); show("s-home"); });
+  $("again").addEventListener("click",function(){ token++; if(G) clearInterval(G.timer); G=null; resetNet(); search(); });
+  $("resignBtn").addEventListener("click",function(){
+    if(!G||G.over) return;
+    if(confirm("Taslim bo'lasizmi?")){ send({t:"resign"}); endGame("Siz taslim bo'ldingiz","Raqib yutdi.","lose"); }
+  });
+  $("drawBtn").addEventListener("click",function(){
+    if(!G||G.over||G.drawSent) return;
+    G.drawSent=true; $("drawBtn").disabled=true; send({t:"draw"});
+    var s=$("stat"); s.textContent="Durang taklifi yuborildi."; s.dataset.keep="1";
+    setTimeout(function(){ if(G){ s.dataset.keep=""; } },3000);
+  });
+  $("accept").addEventListener("click",function(){ if(!G||G.over) return; send({t:"drawok"}); $("offer").hidden=true; endGame("Durang","Siz durangni qabul qildingiz.",""); });
+  $("decline").addEventListener("click",function(){ send({t:"drawno"}); $("offer").hidden=true; });
+  try{ $("nick").value=localStorage.getItem("shahmatNick")||""; }catch(e){}
+  window.addEventListener("beforeunload",function(){ try{ conn&&conn.close(); }catch(e){} });
+})();
+</script>
+</body>
+</html>
